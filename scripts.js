@@ -127,6 +127,43 @@
     animateCounters();
   }
 
+  /* ---------- SCROLL REVEAL ---------- */
+  var revealEls = document.querySelectorAll('[data-reveal]');
+
+  if ('IntersectionObserver' in window) {
+    var revealObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+    revealEls.forEach(function (el, i) {
+      el.style.transitionDelay = (i % 3) * 0.12 + 's';
+      revealObserver.observe(el);
+    });
+  } else {
+    revealEls.forEach(function (el) {
+      el.classList.add('revealed');
+    });
+  }
+
+  /* ---------- STEPS CONNECTING LINE ANIMATION ---------- */
+  var stepsLineFill = document.querySelector('.steps-line-fill');
+  if (stepsLineFill && 'IntersectionObserver' in window) {
+    var lineObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          stepsLineFill.classList.add('animate');
+          lineObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+    lineObserver.observe(stepsLineFill.parentElement);
+  }
+
   /* ---------- ANIMATED CANVAS BACKGROUND ---------- */
   if (heroCanvas) {
     var ctx = heroCanvas.getContext('2d');
