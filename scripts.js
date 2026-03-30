@@ -127,6 +127,141 @@
     animateCounters();
   }
 
+  /* ---------- REVIEWS CAROUSEL ---------- */
+  var reviewsTrack = document.getElementById('reviewsTrack');
+  var reviewsPrev  = document.getElementById('reviewsPrev');
+  var reviewsNext  = document.getElementById('reviewsNext');
+  var reviewsDots  = document.getElementById('reviewsDots');
+
+  if (reviewsTrack) {
+    var reviewCards = reviewsTrack.querySelectorAll('.review-card');
+    var currentSlide = 0;
+    var slidesPerView = 1;
+    var totalSlides = reviewCards.length;
+
+    function getCardsPerView() {
+      if (window.innerWidth >= 1024) return 3;
+      if (window.innerWidth >= 768) return 2;
+      return 1;
+    }
+
+    function getTotalPages() {
+      return Math.max(1, totalSlides - slidesPerView + 1);
+    }
+
+    function buildDots() {
+      reviewsDots.innerHTML = '';
+      var pages = getTotalPages();
+      for (var i = 0; i < pages; i++) {
+        var dot = document.createElement('button');
+        dot.className = 'reviews-dot' + (i === 0 ? ' active' : '');
+        dot.setAttribute('aria-label', 'Go to review ' + (i + 1));
+        dot.dataset.index = i;
+        dot.addEventListener('click', function () {
+          goToSlide(parseInt(this.dataset.index, 10));
+        });
+        reviewsDots.appendChild(dot);
+      }
+    }
+
+    function updateDots() {
+      var dots = reviewsDots.querySelectorAll('.reviews-dot');
+      dots.forEach(function (dot, i) {
+        dot.classList.toggle('active', i === currentSlide);
+      });
+    }
+
+    function goToSlide(index) {
+      var maxSlide = getTotalPages() - 1;
+      currentSlide = Math.max(0, Math.min(index, maxSlide));
+      var cardWidth = reviewCards[0].offsetWidth + 24;
+      reviewsTrack.style.transform = 'translateX(' + -(currentSlide * cardWidth) + 'px)';
+      updateDots();
+    }
+
+    reviewsPrev.addEventListener('click', function () {
+      goToSlide(currentSlide - 1);
+    });
+
+    reviewsNext.addEventListener('click', function () {
+      goToSlide(currentSlide + 1);
+    });
+
+    /* Touch / swipe support */
+    var touchStartX = 0;
+    var touchEndX = 0;
+
+    reviewsTrack.addEventListener('touchstart', function (e) {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    reviewsTrack.addEventListener('touchend', function (e) {
+      touchEndX = e.changedTouches[0].screenX;
+      var diff = touchStartX - touchEndX;
+      if (Math.abs(diff) > 50) {
+        if (diff > 0) {
+          goToSlide(currentSlide + 1);
+        } else {
+          goToSlide(currentSlide - 1);
+        }
+      }
+    }, { passive: true });
+
+    function handleResize() {
+      var newPerView = getCardsPerView();
+      if (newPerView !== slidesPerView) {
+        slidesPerView = newPerView;
+        buildDots();
+        goToSlide(0);
+      }
+    }
+
+    slidesPerView = getCardsPerView();
+    buildDots();
+    window.addEventListener('resize', handleResize);
+  }
+
+  /* ---------- CREDIBILITY COUNT-UP ---------- */
+  var credNumbers = document.querySelectorAll('.cred-number[data-count-target]');
+
+  function animateCredCounters() {
+    credNumbers.forEach(function (el) {
+      var target = parseInt(el.getAttribute('data-count-target'), 10);
+      var suffix = el.getAttribute('data-count-suffix') || '';
+      var prefix = el.getAttribute('data-count-prefix') || '';
+      var duration = 2200;
+      var startTime = null;
+
+      function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        var progress = Math.min((timestamp - startTime) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        var current = Math.floor(eased * target);
+        el.textContent = prefix + current + (progress < 1 ? '' : suffix);
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          el.textContent = prefix + target + suffix;
+        }
+      }
+
+      requestAnimationFrame(step);
+    });
+  }
+
+  if (credNumbers.length > 0 && 'IntersectionObserver' in window) {
+    var credSection = document.querySelector('.credibility');
+    var credObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          animateCredCounters();
+          credObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.4 });
+    credObserver.observe(credSection);
+  }
+
   /* ---------- SCROLL REVEAL ---------- */
   var revealEls = document.querySelectorAll('[data-reveal]');
 
